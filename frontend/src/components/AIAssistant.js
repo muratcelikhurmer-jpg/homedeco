@@ -142,32 +142,64 @@ export default function AIAssistant({ onProductSuggestion }) {
       description = context.slice(0, 500);
     }
     
+    // Find user's room photo from messages (last uploaded image)
+    let roomImageBase64 = null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role === 'user' && msg.images && msg.images.length > 0) {
+        // Get the last uploaded image (likely the room photo)
+        roomImageBase64 = msg.images[msg.images.length - 1];
+        break;
+      }
+    }
+    
+    // Also check currently selected images
+    if (!roomImageBase64 && selectedImages.length > 0) {
+      roomImageBase64 = selectedImages[selectedImages.length - 1];
+    }
+    
     setIsGeneratingImage(true);
     
     // Add user message about generating
     const userMsg = {
       role: 'user',
-      content: language === 'tr' 
-        ? '✨ Tasarım görseli oluşturuluyor...' 
-        : '✨ Generating design visualization...',
+      content: roomImageBase64 
+        ? (language === 'tr' 
+          ? '✨ Tasarım odanıza uygulanıyor...' 
+          : '✨ Applying design to your room...')
+        : (language === 'tr' 
+          ? '✨ Tasarım görseli oluşturuluyor...' 
+          : '✨ Generating design visualization...'),
       timestamp: new Date().toISOString()
     };
     setMessages(prev => [...prev, userMsg]);
     
     try {
-      const response = await axios.post(`${API}/generate-quick-design`, {
+      const requestData = {
         description: description,
         product_type: productType,
         style: style,
         room_type: 'bedroom'
-      });
+      };
+      
+      // If we have user's room photo, include it for editing
+      if (roomImageBase64) {
+        requestData.room_image_base64 = roomImageBase64;
+      }
+      
+      const response = await axios.post(`${API}/generate-quick-design`, requestData);
       
       if (response.data.image_base64) {
+        const isEdited = response.data.edited;
         const assistantMsg = {
           role: 'assistant',
-          content: language === 'tr'
-            ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Değişiklik yapmamı ister misiniz?'
-            : 'Here is my design suggestion! Do you like it? Would you like me to make any changes?',
+          content: isEdited
+            ? (language === 'tr'
+              ? '🎨 İşte odanıza özel tasarım! Mobilyayı kendi odanızda görebilirsiniz. Değişiklik yapmamı ister misiniz?'
+              : '🎨 Here is your personalized design! You can see the furniture in your own room. Would you like me to make any changes?')
+            : (language === 'tr'
+              ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Kendi odanızın fotoğrafını yüklerseniz, bu tasarımı odanıza uygulayabilirim.'
+              : 'Here is my design suggestion! Do you like it? If you upload a photo of your room, I can apply this design to your space.'),
           generatedImage: response.data.image_base64,
           timestamp: new Date().toISOString()
         };
