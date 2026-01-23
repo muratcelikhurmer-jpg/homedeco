@@ -409,6 +409,23 @@ export default function AIAssistant({ onProductSuggestion }) {
             <Ruler className="w-5 h-5" />
           </Button>
 
+          {/* Generate Design Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGenerateDesign}
+            disabled={isGeneratingImage}
+            className="text-white/40 hover:text-[#D4AF37] hover:bg-white/5"
+            data-testid="generate-design-btn"
+            title={language === 'tr' ? 'Tasarım Oluştur' : 'Generate Design'}
+          >
+            {isGeneratingImage ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Wand2 className="w-5 h-5" />
+            )}
+          </Button>
+
           {/* Text Input */}
           <Textarea
             value={input}
@@ -422,13 +439,38 @@ export default function AIAssistant({ onProductSuggestion }) {
           {/* Send Button */}
           <Button
             onClick={handleSend}
-            disabled={isLoading || (!input.trim() && selectedImages.length === 0)}
+            disabled={isLoading || isGeneratingImage || (!input.trim() && selectedImages.length === 0)}
             className="bg-[#D4AF37] text-black hover:bg-[#C5A028] rounded-none h-11 px-6"
             data-testid="send-message-btn"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
+        
+        {/* Generate Design Full Button - More visible */}
+        {messages.length > 2 && !isGeneratingImage && (
+          <div className="mt-3 pt-3 border-t border-white/5">
+            <Button
+              onClick={handleGenerateDesign}
+              disabled={isGeneratingImage}
+              className="w-full bg-gradient-to-r from-[#D4AF37]/20 to-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/20 rounded-none py-3"
+              data-testid="generate-design-full-btn"
+            >
+              <Wand2 className="w-4 h-4 mr-2" />
+              {language === 'tr' ? '✨ Tasarım Görseli Oluştur' : '✨ Generate Design Visualization'}
+            </Button>
+          </div>
+        )}
+        
+        {/* Loading indicator for image generation */}
+        {isGeneratingImage && (
+          <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-center gap-2 text-[#D4AF37]">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">
+              {language === 'tr' ? 'Tasarım oluşturuluyor... (30-60 sn)' : 'Generating design... (30-60 sec)'}
+            </span>
+          </div>
+        )}
       </div>
     </div>
     </>
