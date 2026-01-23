@@ -190,16 +190,16 @@ export default function AIAssistant({ onProductSuggestion }) {
       const response = await axios.post(`${API}/generate-quick-design`, requestData);
       
       if (response.data.image_base64) {
-        const isEdited = response.data.edited;
+        const roomAnalyzed = response.data.room_analyzed;
         const assistantMsg = {
           role: 'assistant',
-          content: isEdited
+          content: roomAnalyzed
             ? (language === 'tr'
-              ? '🎨 İşte odanıza özel tasarım! Mobilyayı kendi odanızda görebilirsiniz. Değişiklik yapmamı ister misiniz?'
-              : '🎨 Here is your personalized design! You can see the furniture in your own room. Would you like me to make any changes?')
+              ? '🎨 İşte odanıza uygun tasarım! Odanızın özelliklerini (duvar rengi, zemin, ışık) analiz ettim ve buna uygun bir tasarım oluşturdum. Beğendiniz mi?'
+              : '🎨 Here is a design matching your room! I analyzed your room characteristics (wall color, floor, lighting) and created a matching design. Do you like it?')
             : (language === 'tr'
-              ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Kendi odanızın fotoğrafını yüklerseniz, bu tasarımı odanıza uygulayabilirim.'
-              : 'Here is my design suggestion! Do you like it? If you upload a photo of your room, I can apply this design to your space.'),
+              ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Kendi odanızın fotoğrafını yüklerseniz, odanıza uygun bir tasarım oluşturabilirim.'
+              : 'Here is my design suggestion! Do you like it? If you upload a photo of your room, I can create a design that matches your space.'),
           generatedImage: response.data.image_base64,
           timestamp: new Date().toISOString()
         };
