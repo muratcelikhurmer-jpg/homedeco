@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone
 import base64
+import httpx
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -24,6 +25,10 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 # AI Image Generation imports
 from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
+
+# Fal.ai for image editing
+import fal_client
+os.environ["FAL_KEY"] = os.environ.get("FAL_KEY", "")
 
 # Stripe imports
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
