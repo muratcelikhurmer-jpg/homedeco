@@ -294,6 +294,18 @@ export default function AIAssistant({ onProductSuggestion }) {
             {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </Button>
 
+          {/* Measurement Tool */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowMeasurementTool(true)}
+            className="text-white/40 hover:text-[#D4AF37] hover:bg-white/5"
+            data-testid="measurement-tool-btn"
+            title={language === 'tr' ? 'Oda Ölçümü' : 'Room Measurement'}
+          >
+            <Ruler className="w-5 h-5" />
+          </Button>
+
           {/* Text Input */}
           <Textarea
             value={input}
