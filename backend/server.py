@@ -346,6 +346,52 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     session_id: str
+    generated_image: Optional[str] = None  # Base64 image if AI generated one
+
+import re
+
+async def generate_image_from_tag(tag_content: str, llm_key: str) -> Optional[str]:
+    """Parse [GENERATE_IMAGE] tag and generate image"""
+    try:
+        # Parse: product_type | style | description
+        parts = [p.strip() for p in tag_content.split('|')]
+        if len(parts) >= 3:
+            product_type = parts[0]
+            style = parts[1]
+            description = parts[2]
+        else:
+            description = tag_content
+            product_type = "furniture"
+            style = "modern"
+        
+        prompt = f"""Create a photorealistic interior design visualization:
+
+A {style} bedroom featuring custom {product_type}.
+Design: {description}
+
+Requirements:
+- Photorealistic render quality
+- Premium, European luxury aesthetic  
+- Professional interior photography style
+- Soft natural lighting
+- High-end materials visible
+- Clean, sophisticated design
+
+The image should look like a professional interior design magazine photo."""
+
+        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        images = await image_gen.generate_images(
+            prompt=prompt,
+            model="gpt-image-1",
+            number_of_images=1
+        )
+        
+        if images and len(images) > 0:
+            return base64.b64encode(images[0]).decode('utf-8')
+        return None
+    except Exception as e:
+        logger.error(f"Image generation in chat error: {str(e)}")
+        return None
 
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat_with_ai(request: ChatRequest):
