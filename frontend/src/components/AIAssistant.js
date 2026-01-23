@@ -165,8 +165,8 @@ export default function AIAssistant({ onProductSuggestion }) {
       role: 'user',
       content: roomImageBase64 
         ? (language === 'tr' 
-          ? '✨ Tasarım odanıza uygulanıyor...' 
-          : '✨ Applying design to your room...')
+          ? '✨ Tasarım odanıza uygulanıyor (fal.ai)...' 
+          : '✨ Applying design to your room (fal.ai)...')
         : (language === 'tr' 
           ? '✨ Tasarım görseli oluşturuluyor...' 
           : '✨ Generating design visualization...'),
@@ -175,31 +175,36 @@ export default function AIAssistant({ onProductSuggestion }) {
     setMessages(prev => [...prev, userMsg]);
     
     try {
-      const requestData = {
-        description: description,
-        product_type: productType,
-        style: style,
-        room_type: 'bedroom'
-      };
+      let response;
       
-      // If we have user's room photo, include it for editing
+      // If we have user's room photo, use fal.ai to edit it directly
       if (roomImageBase64) {
-        requestData.room_image_base64 = roomImageBase64;
+        // Use fal.ai image-to-image editing
+        response = await axios.post(`${API}/edit-room-image`, {
+          room_image_base64: roomImageBase64,
+          edit_prompt: description
+        }, { timeout: 120000 }); // 2 minute timeout for image generation
+      } else {
+        // No room photo - generate new design with OpenAI
+        response = await axios.post(`${API}/generate-quick-design`, {
+          description: description,
+          product_type: productType,
+          style: style,
+          room_type: 'bedroom'
+        });
       }
       
-      const response = await axios.post(`${API}/generate-quick-design`, requestData);
-      
       if (response.data.image_base64) {
-        const roomAnalyzed = response.data.room_analyzed;
+        const isEdited = response.data.edited;
         const assistantMsg = {
           role: 'assistant',
-          content: roomAnalyzed
+          content: isEdited
             ? (language === 'tr'
-              ? '🎨 İşte odanıza uygun tasarım! Odanızın özelliklerini (duvar rengi, zemin, ışık) analiz ettim ve buna uygun bir tasarım oluşturdum. Beğendiniz mi?'
-              : '🎨 Here is a design matching your room! I analyzed your room characteristics (wall color, floor, lighting) and created a matching design. Do you like it?')
+              ? '🎨 İşte odanıza özel tasarım! Mobilyayı kendi odanızda görebilirsiniz. Değişiklik yapmamı ister misiniz? (örn: "Rafları ekle", "Rengi değiştir", "Daha fazla çekmece")'
+              : '🎨 Here is your personalized design! You can see the furniture in your own room. Would you like me to make any changes?')
             : (language === 'tr'
-              ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Kendi odanızın fotoğrafını yüklerseniz, odanıza uygun bir tasarım oluşturabilirim.'
-              : 'Here is my design suggestion! Do you like it? If you upload a photo of your room, I can create a design that matches your space.'),
+              ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Kendi odanızın fotoğrafını yüklerseniz, bu tasarımı odanıza uygulayabilirim.'
+              : 'Here is my design suggestion! Do you like it? If you upload a photo of your room, I can apply this design to your space.'),
           generatedImage: response.data.image_base64,
           timestamp: new Date().toISOString()
         };
