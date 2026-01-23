@@ -95,6 +95,7 @@ export default function AIAssistant({ onProductSuggestion }) {
       const assistantMessage = {
         role: 'assistant',
         content: response.data.response,
+        generatedImage: response.data.generated_image, // AI generated design image
         timestamp: new Date().toISOString()
       };
 
