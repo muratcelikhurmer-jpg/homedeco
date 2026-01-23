@@ -362,9 +362,10 @@ async def chat_with_ai(request: ChatRequest):
                     img_base64 = img_base64.split("base64,")[1]
                 image_contents.append(ImageContent(image_base64=img_base64))
             
+            # Use file_contents parameter (correct API)
             user_message = UserMessage(
-                text=request.message,
-                image_contents=image_contents
+                text=request.message if request.message else "Please analyze this image and describe what you see.",
+                file_contents=image_contents
             )
         else:
             user_message = UserMessage(text=request.message)
