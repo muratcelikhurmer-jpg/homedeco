@@ -557,69 +557,71 @@ class QuickDesignRequest(BaseModel):
     product_type: str = "cabinet"  # cabinet, door, countertop, furniture
     style: str = "modern"
     room_type: str = "bedroom"
-    room_image_base64: Optional[str] = None  # User's room photo for editing
+    room_image_base64: Optional[str] = None  # User's room photo for context
 
 @api_router.post("/generate-quick-design")
 async def generate_quick_design(request: QuickDesignRequest):
     """
-    Quick design generation based on text description.
-    If room_image_base64 is provided, edits the user's photo.
-    Otherwise creates a new design visualization.
+    Design generation based on text description.
+    If room_image_base64 is provided, first analyzes the room then creates matching design.
     """
     try:
         llm_key = os.environ.get('EMERGENT_LLM_KEY')
         if not llm_key:
             raise HTTPException(status_code=500, detail="AI service not configured")
         
-        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        room_analysis = ""
         
-        # If user provided their room photo, edit it
+        # If user provided their room photo, analyze it first
         if request.room_image_base64:
-            # Remove data URL prefix if present
-            img_base64 = request.room_image_base64
-            if "base64," in img_base64:
-                img_base64 = img_base64.split("base64,")[1]
-            
-            # Decode base64 to bytes
-            room_image_bytes = base64.b64decode(img_base64)
-            
-            edit_prompt = f"""Transform this bedroom photo by adding custom furniture:
-
-ADD TO THIS ROOM:
-- {request.description}
-- Style: {request.style}, premium European quality
-- Product type: {request.product_type}
-
-IMPORTANT RULES:
-- Keep the original room structure, walls, floor, and lighting
-- Add the furniture naturally as if it was professionally installed
-- Maintain realistic shadows and perspective
-- The result should look like a real interior design photo
-- Keep any existing furniture that should stay (like the bed)
-- Make the new furniture blend seamlessly with the room"""
-
-            logger.info(f"Editing user's room photo with prompt: {edit_prompt[:200]}...")
-            
-            # Use edit_images to modify the user's photo
-            edited_images = await image_gen.edit_images(
-                prompt=edit_prompt,
-                images=[room_image_bytes],
-                model="gpt-image-1",
-                number_of_images=1
-            )
-            
-            if edited_images and len(edited_images) > 0:
-                image_base64 = base64.b64encode(edited_images[0]).decode('utf-8')
-                return {
-                    "image_base64": image_base64,
-                    "prompt_used": edit_prompt,
-                    "edited": True
-                }
-            else:
-                raise HTTPException(status_code=500, detail="Failed to edit image")
+            try:
+                # Remove data URL prefix if present
+                img_base64 = request.room_image_base64
+                if "base64," in img_base64:
+                    img_base64 = img_base64.split("base64,")[1]
+                
+                # Use GPT-4o to analyze the room
+                analysis_chat = LlmChat(
+                    api_key=llm_key,
+                    session_id=f"room_analysis_{uuid.uuid4()}",
+                    system_message="You are an interior design expert. Analyze rooms and describe them in detail for design purposes."
+                ).with_model("openai", "gpt-4o")
+                
+                analysis_message = UserMessage(
+                    text="Analyze this bedroom photo in detail. Describe: 1) Room dimensions (approximate), 2) Wall colors, 3) Floor type, 4) Existing furniture, 5) Lighting conditions, 6) Style/aesthetic. Be specific about measurements if visible.",
+                    file_contents=[ImageContent(image_base64=img_base64)]
+                )
+                
+                room_analysis = await analysis_chat.send_message(analysis_message)
+                logger.info(f"Room analysis completed: {room_analysis[:200]}...")
+                
+            except Exception as e:
+                logger.error(f"Room analysis error: {str(e)}")
+                room_analysis = ""
         
-        # No room photo - generate new design
-        prompt = f"""Create a photorealistic interior design visualization:
+        # Build prompt with room context if available
+        if room_analysis:
+            prompt = f"""Create a photorealistic interior design visualization of a bedroom with custom furniture.
+
+ROOM ANALYSIS (from customer's actual room):
+{room_analysis}
+
+DESIGN REQUEST:
+- Add: {request.description}
+- Product type: {request.product_type}
+- Style: {request.style}
+
+IMPORTANT REQUIREMENTS:
+- Create a room that MATCHES the analyzed room's characteristics (wall color, floor, lighting)
+- The new furniture should look naturally integrated
+- Keep similar room proportions and style
+- Premium, European luxury quality
+- Photorealistic interior photography style
+- The result should look like the customer's actual room with the new furniture installed
+
+Create an image that shows how the requested furniture would look in a room matching the customer's space."""
+        else:
+            prompt = f"""Create a photorealistic interior design visualization:
 
 A {request.style} {request.room_type} featuring custom {request.product_type}.
 Description: {request.description}
@@ -634,6 +636,8 @@ Requirements:
 
 The image should look like a professional interior design magazine photo."""
 
+        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        
         images = await image_gen.generate_images(
             prompt=prompt,
             model="gpt-image-1",
@@ -645,7 +649,8 @@ The image should look like a professional interior design magazine photo."""
             return {
                 "image_base64": image_base64,
                 "prompt_used": prompt,
-                "edited": False
+                "room_analyzed": bool(room_analysis),
+                "room_analysis": room_analysis[:500] if room_analysis else None
             }
         else:
             raise HTTPException(status_code=500, detail="No image was generated")
