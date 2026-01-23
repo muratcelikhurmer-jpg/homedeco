@@ -116,39 +116,59 @@ export default function AIAssistant({ onProductSuggestion }) {
 
   // Generate design visualization directly
   const handleGenerateDesign = async () => {
-    // Get description from conversation context or input
-    const lastMessages = messages.slice(-5);
-    const context = lastMessages.map(m => m.content).join(' ');
+    // Get description from USER messages only (not AI responses)
+    const userMessages = messages.filter(m => m.role === 'user').slice(-5);
+    const userContext = userMessages.map(m => m.content).join(' ');
     
     // Extract product info from context
     let productType = 'cabinet';
     let style = 'modern';
-    let description = input || 'Yatak odası için şık dolap tasarımı';
     
-    if (context.toLowerCase().includes('dolap') || context.toLowerCase().includes('cabinet')) {
+    // Build proper description from user's requests
+    let description = '';
+    
+    // If user typed something in input, use that primarily
+    if (input && input.trim()) {
+      description = input;
+    } else if (userContext) {
+      // Filter out system messages and build description
+      const cleanContext = userContext
+        .replace(/✨.*?\.\.\./g, '') // Remove generating messages
+        .replace(/📏.*?%\)/g, '') // Remove measurement messages
+        .trim();
+      description = cleanContext.slice(0, 800);
+    }
+    
+    // If still no description, use default
+    if (!description || description.length < 10) {
+      description = language === 'tr' 
+        ? 'Yatak odası için modern dolap sistemi, yatağın etrafında dolaplar ve raflar'
+        : 'Modern cabinet system for bedroom, cabinets and shelves around the bed';
+    }
+    
+    // Extract style hints
+    if (userContext.toLowerCase().includes('dolap') || userContext.toLowerCase().includes('cabinet')) {
       productType = 'cabinet';
-    } else if (context.toLowerCase().includes('kapı') || context.toLowerCase().includes('door')) {
+    } else if (userContext.toLowerCase().includes('kapı') || userContext.toLowerCase().includes('door')) {
       productType = 'door';
-    } else if (context.toLowerCase().includes('tezgah') || context.toLowerCase().includes('counter')) {
+    } else if (userContext.toLowerCase().includes('tezgah') || userContext.toLowerCase().includes('counter')) {
       productType = 'countertop';
     }
     
-    if (context.toLowerCase().includes('modern')) style = 'modern';
-    if (context.toLowerCase().includes('klasik') || context.toLowerCase().includes('classic')) style = 'classic';
-    if (context.toLowerCase().includes('minimal')) style = 'minimalist';
+    if (userContext.toLowerCase().includes('modern')) style = 'modern';
+    if (userContext.toLowerCase().includes('klasik') || userContext.toLowerCase().includes('classic')) style = 'classic';
+    if (userContext.toLowerCase().includes('krem') || userContext.toLowerCase().includes('cream')) style = 'cream colored modern';
+    if (userContext.toLowerCase().includes('koyu') || userContext.toLowerCase().includes('dark')) style = 'dark wood modern';
     
-    // Use context as description if no input
-    if (!input && context) {
-      description = context.slice(0, 500);
-    }
-    
-    // Find user's room photo from messages (last uploaded image)
+    // Find user's room photo from messages (last uploaded image that looks like a room)
     let roomImageBase64 = null;
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role === 'user' && msg.images && msg.images.length > 0) {
-        // Get the last uploaded image (likely the room photo)
-        roomImageBase64 = msg.images[msg.images.length - 1];
+        // Get the last uploaded image (likely the room photo - skip inspiration images if there are multiple)
+        // If user uploaded 2 images, second one is usually their room
+        const imgIndex = msg.images.length > 1 ? 1 : 0;
+        roomImageBase64 = msg.images[imgIndex];
         break;
       }
     }
@@ -157,6 +177,9 @@ export default function AIAssistant({ onProductSuggestion }) {
     if (!roomImageBase64 && selectedImages.length > 0) {
       roomImageBase64 = selectedImages[selectedImages.length - 1];
     }
+    
+    console.log('Design generation - Description:', description.slice(0, 100));
+    console.log('Design generation - Has room image:', !!roomImageBase64);
     
     setIsGeneratingImage(true);
     
