@@ -114,6 +114,80 @@ export default function AIAssistant({ onProductSuggestion }) {
     }
   };
 
+  // Generate design visualization directly
+  const handleGenerateDesign = async () => {
+    // Get description from conversation context or input
+    const lastMessages = messages.slice(-5);
+    const context = lastMessages.map(m => m.content).join(' ');
+    
+    // Extract product info from context
+    let productType = 'cabinet';
+    let style = 'modern';
+    let description = input || 'Yatak odası için şık dolap tasarımı';
+    
+    if (context.toLowerCase().includes('dolap') || context.toLowerCase().includes('cabinet')) {
+      productType = 'cabinet';
+    } else if (context.toLowerCase().includes('kapı') || context.toLowerCase().includes('door')) {
+      productType = 'door';
+    } else if (context.toLowerCase().includes('tezgah') || context.toLowerCase().includes('counter')) {
+      productType = 'countertop';
+    }
+    
+    if (context.toLowerCase().includes('modern')) style = 'modern';
+    if (context.toLowerCase().includes('klasik') || context.toLowerCase().includes('classic')) style = 'classic';
+    if (context.toLowerCase().includes('minimal')) style = 'minimalist';
+    
+    // Use context as description if no input
+    if (!input && context) {
+      description = context.slice(0, 500);
+    }
+    
+    setIsGeneratingImage(true);
+    
+    // Add user message about generating
+    const userMsg = {
+      role: 'user',
+      content: language === 'tr' 
+        ? '✨ Tasarım görseli oluşturuluyor...' 
+        : '✨ Generating design visualization...',
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    
+    try {
+      const response = await axios.post(`${API}/generate-quick-design`, {
+        description: description,
+        product_type: productType,
+        style: style,
+        room_type: 'bedroom'
+      });
+      
+      if (response.data.image_base64) {
+        const assistantMsg = {
+          role: 'assistant',
+          content: language === 'tr'
+            ? 'İşte tasarım önerim! Bu görseli beğendiniz mi? Değişiklik yapmamı ister misiniz?'
+            : 'Here is my design suggestion! Do you like it? Would you like me to make any changes?',
+          generatedImage: response.data.image_base64,
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+      }
+    } catch (error) {
+      console.error('Design generation error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: language === 'tr' 
+          ? 'Görsel oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.'
+          : 'An error occurred while generating the design. Please try again.',
+        timestamp: new Date().toISOString(),
+        isError: true
+      }]);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     files.forEach(file => {
