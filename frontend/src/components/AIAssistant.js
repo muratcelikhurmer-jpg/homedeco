@@ -17,6 +17,7 @@ export default function AIAssistant({ onProductSuggestion }) {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [selectedImages, setSelectedImages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [showMeasurementTool, setShowMeasurementTool] = useState(false);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
   const recognitionRef = useRef(null);
