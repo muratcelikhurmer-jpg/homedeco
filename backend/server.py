@@ -557,18 +557,68 @@ class QuickDesignRequest(BaseModel):
     product_type: str = "cabinet"  # cabinet, door, countertop, furniture
     style: str = "modern"
     room_type: str = "bedroom"
+    room_image_base64: Optional[str] = None  # User's room photo for editing
 
 @api_router.post("/generate-quick-design")
 async def generate_quick_design(request: QuickDesignRequest):
     """
-    Quick design generation based on text description only.
-    For users who want to see design concepts before sharing their room photos.
+    Quick design generation based on text description.
+    If room_image_base64 is provided, edits the user's photo.
+    Otherwise creates a new design visualization.
     """
     try:
         llm_key = os.environ.get('EMERGENT_LLM_KEY')
         if not llm_key:
             raise HTTPException(status_code=500, detail="AI service not configured")
         
+        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        
+        # If user provided their room photo, edit it
+        if request.room_image_base64:
+            # Remove data URL prefix if present
+            img_base64 = request.room_image_base64
+            if "base64," in img_base64:
+                img_base64 = img_base64.split("base64,")[1]
+            
+            # Decode base64 to bytes
+            room_image_bytes = base64.b64decode(img_base64)
+            
+            edit_prompt = f"""Transform this bedroom photo by adding custom furniture:
+
+ADD TO THIS ROOM:
+- {request.description}
+- Style: {request.style}, premium European quality
+- Product type: {request.product_type}
+
+IMPORTANT RULES:
+- Keep the original room structure, walls, floor, and lighting
+- Add the furniture naturally as if it was professionally installed
+- Maintain realistic shadows and perspective
+- The result should look like a real interior design photo
+- Keep any existing furniture that should stay (like the bed)
+- Make the new furniture blend seamlessly with the room"""
+
+            logger.info(f"Editing user's room photo with prompt: {edit_prompt[:200]}...")
+            
+            # Use edit_images to modify the user's photo
+            edited_images = await image_gen.edit_images(
+                prompt=edit_prompt,
+                images=[room_image_bytes],
+                model="gpt-image-1",
+                number_of_images=1
+            )
+            
+            if edited_images and len(edited_images) > 0:
+                image_base64 = base64.b64encode(edited_images[0]).decode('utf-8')
+                return {
+                    "image_base64": image_base64,
+                    "prompt_used": edit_prompt,
+                    "edited": True
+                }
+            else:
+                raise HTTPException(status_code=500, detail="Failed to edit image")
+        
+        # No room photo - generate new design
         prompt = f"""Create a photorealistic interior design visualization:
 
 A {request.style} {request.room_type} featuring custom {request.product_type}.
@@ -584,8 +634,6 @@ Requirements:
 
 The image should look like a professional interior design magazine photo."""
 
-        image_gen = OpenAIImageGeneration(api_key=llm_key)
-        
         images = await image_gen.generate_images(
             prompt=prompt,
             model="gpt-image-1",
@@ -596,7 +644,8 @@ The image should look like a professional interior design magazine photo."""
             image_base64 = base64.b64encode(images[0]).decode('utf-8')
             return {
                 "image_base64": image_base64,
-                "prompt_used": prompt
+                "prompt_used": prompt,
+                "edited": False
             }
         else:
             raise HTTPException(status_code=500, detail="No image was generated")
