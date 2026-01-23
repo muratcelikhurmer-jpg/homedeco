@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Send, Image, Mic, MicOff, Loader2, X, Ruler } from 'lucide-react';
+import { Send, Image, Mic, MicOff, Loader2, X, Ruler, Wand2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +14,7 @@ export default function AIAssistant({ onProductSuggestion }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [selectedImages, setSelectedImages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
