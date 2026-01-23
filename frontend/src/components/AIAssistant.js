@@ -143,8 +143,42 @@ export default function AIAssistant({ onProductSuggestion }) {
     }
   };
 
+  // Handle measurement result
+  const handleMeasurementComplete = (measurement) => {
+    const measurementText = language === 'tr' 
+      ? `📏 Ölçüm sonucu: ${measurement.value} cm (${measurement.accuracy})`
+      : language === 'de'
+      ? `📏 Messergebnis: ${measurement.value} cm (${measurement.accuracy})`
+      : `📏 Measurement result: ${measurement.value} cm (${measurement.accuracy})`;
+    
+    // Add measurement as a user message with the captured image
+    const userMessage = {
+      role: 'user',
+      content: measurementText,
+      images: measurement.image ? [measurement.image] : undefined,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Auto-send to AI for context
+    setInput(measurementText);
+    if (measurement.image) {
+      setSelectedImages([measurement.image]);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-[#121212] rounded-none border border-white/5" data-testid="ai-assistant">
+    <>
+      {/* Measurement Tool Modal */}
+      {showMeasurementTool && (
+        <MeasurementTool
+          onMeasurementComplete={handleMeasurementComplete}
+          onClose={() => setShowMeasurementTool(false)}
+        />
+      )}
+      
+      <div className="flex flex-col h-full bg-[#121212] rounded-none border border-white/5" data-testid="ai-assistant">
       {/* Header */}
       <div className="p-6 border-b border-white/5">
         <div className="flex items-center space-x-4">
