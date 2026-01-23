@@ -430,6 +430,28 @@ async def chat_with_ai(request: ChatRequest):
         # Send message and get response
         response = await chat.send_message(user_message)
         
+        # Check if AI wants to generate an image
+        generated_image = None
+        image_tag_pattern = r'\[GENERATE_IMAGE:\s*([^\]]+)\]'
+        match = re.search(image_tag_pattern, response)
+        
+        if match:
+            tag_content = match.group(1)
+            logger.info(f"AI requested image generation: {tag_content}")
+            
+            # Generate the image
+            generated_image = await generate_image_from_tag(tag_content, llm_key)
+            
+            # Clean the tag from response and add note about image
+            if generated_image:
+                response = re.sub(image_tag_pattern, '', response).strip()
+                if request.language == 'tr':
+                    response += "\n\n✨ Tasarım görselini aşağıda görebilirsiniz."
+                elif request.language == 'de':
+                    response += "\n\n✨ Unten sehen Sie die Designvisualisierung."
+                else:
+                    response += "\n\n✨ See the design visualization below."
+        
         # Store in database
         await db.chat_sessions.update_one(
             {"session_id": request.session_id},
@@ -438,7 +460,7 @@ async def chat_with_ai(request: ChatRequest):
                     "messages": {
                         "$each": [
                             {"role": "user", "content": request.message, "timestamp": datetime.now(timezone.utc).isoformat()},
-                            {"role": "assistant", "content": response, "timestamp": datetime.now(timezone.utc).isoformat()}
+                            {"role": "assistant", "content": response, "image": generated_image, "timestamp": datetime.now(timezone.utc).isoformat()}
                         ]
                     }
                 },
@@ -448,7 +470,7 @@ async def chat_with_ai(request: ChatRequest):
             upsert=True
         )
         
-        return ChatResponse(response=response, session_id=request.session_id)
+        return ChatResponse(response=response, session_id=request.session_id, generated_image=generated_image)
     
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
