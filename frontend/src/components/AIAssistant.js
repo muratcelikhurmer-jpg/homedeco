@@ -206,12 +206,13 @@ export default function AIAssistant({ onProductSuggestion }) {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div 
-                className={`max-w-[80%] ${
+                className={`max-w-[85%] ${
                   msg.role === 'user' 
                     ? 'bg-[#D4AF37]/10 border border-[#D4AF37]/20' 
                     : 'bg-white/5 border border-white/5'
                 } p-4 ${msg.isError ? 'border-red-500/30' : ''}`}
               >
+                {/* User uploaded images */}
                 {msg.images && msg.images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
                     {msg.images.map((img, imgIdx) => (
@@ -224,11 +225,37 @@ export default function AIAssistant({ onProductSuggestion }) {
                     ))}
                   </div>
                 )}
+                
+                {/* Message text */}
                 <p className={`text-sm whitespace-pre-wrap ${
                   msg.role === 'user' ? 'text-white' : 'text-white/80'
                 }`}>
                   {msg.content}
                 </p>
+                
+                {/* AI Generated Design Image */}
+                {msg.generatedImage && (
+                  <div className="mt-4 border border-[#D4AF37]/30 rounded-lg overflow-hidden">
+                    <div className="bg-[#D4AF37]/10 px-3 py-2 flex items-center gap-2">
+                      <span className="text-[#D4AF37] text-xs font-semibold uppercase tracking-wider">
+                        ✨ AI Design Visualization
+                      </span>
+                    </div>
+                    <img 
+                      src={`data:image/png;base64,${msg.generatedImage}`}
+                      alt="AI Generated Design"
+                      className="w-full max-w-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => {
+                        // Open full size in new tab
+                        const w = window.open();
+                        w.document.write(`<img src="data:image/png;base64,${msg.generatedImage}" />`);
+                      }}
+                    />
+                    <div className="bg-black/30 px-3 py-2">
+                      <p className="text-white/40 text-xs">Click image to view full size</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
