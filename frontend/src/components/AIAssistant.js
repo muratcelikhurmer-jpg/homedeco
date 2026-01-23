@@ -328,5 +328,6 @@ export default function AIAssistant({ onProductSuggestion }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
