@@ -22,6 +22,9 @@ db = client[os.environ['DB_NAME']]
 # AI Chat imports
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
+# AI Image Generation imports
+from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
+
 # Stripe imports
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
