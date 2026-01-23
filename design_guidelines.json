@@ -1,0 +1,174 @@
+{
+  "identity": {
+    "name": "E1 - The Anti-AI Designer",
+    "mission": "Create a top 1% luxury e-commerce experience that feels like an architectural portfolio, not a template.",
+    "principles": [
+      "Fusion over Imitation: Mix Architectural Digest aesthetics with SaaS precision.",
+      "Emotion First: Trust and Sophistication.",
+      "Content is King: Every product photo is a hero.",
+      "Zoom In: Focus on textures (wood grain, marble veins).",
+      "Negative Space: Luxury needs room to breathe."
+    ]
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Playfair Display, serif",
+      "weights": ["400", "600", "700"],
+      "usage": "Main headlines, Section titles, Product names",
+      "letter_spacing": "tracking-tight"
+    },
+    "body": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["300", "400", "500", "600"],
+      "usage": "Paragraphs, UI elements, Specifications, Prices",
+      "letter_spacing": "tracking-normal"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Order IDs, Dimensions, Technical specs"
+    }
+  },
+  "colors": {
+    "palette_name": "Archetype 5: Jewel & Luxury (The 'Obsidian & Gold' Edit)",
+    "background": {
+      "default": "#0A0A0A",
+      "paper": "#121212",
+      "subtle": "#1A1A1A"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#A1A1AA",
+      "muted": "#52525B"
+    },
+    "brand": {
+      "primary": "#D4AF37",
+      "primary_foreground": "#000000",
+      "secondary": "#E5E7EB",
+      "accent": "#C0C0C0"
+    },
+    "status": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6"
+    }
+  },
+  "visual_enhancers": {
+    "borders": "1px solid rgba(255, 255, 255, 0.08)",
+    "glassmorphism": {
+      "background": "rgba(18, 18, 18, 0.7)",
+      "backdrop_filter": "blur(12px)",
+      "border": "1px solid rgba(255, 255, 255, 0.05)"
+    },
+    "shadows": {
+      "card": "0 4px 24px -2px rgba(0, 0, 0, 0.4)",
+      "glow": "0 0 20px rgba(212, 175, 55, 0.15)"
+    },
+    "textures": "Use subtle noise overlays on solid backgrounds to prevent banding and add 'paper' feel."
+  },
+  "layout_strategies": {
+    "marketing": {
+      "grid_type": "Mode A: The Tetris Grid",
+      "columns": "grid-cols-1 md:grid-cols-12",
+      "gap": "gap-8 md:gap-12",
+      "rules": "Asymmetry is key. Never fill 100% of the grid. Use empty cells for breathing room."
+    },
+    "dashboard": {
+      "grid_type": "Mode B: High Density Grid",
+      "columns": "grid-cols-1 md:grid-cols-4",
+      "gap": "gap-4",
+      "rules": "Dense, functional. Every pixel utilized. No jagged bottoms."
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#D4AF37] text-black hover:bg-[#C5A028] rounded-none uppercase tracking-widest text-xs font-bold px-8 py-4 transition-all duration-300",
+      "secondary": "bg-transparent border border-white/20 text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-none uppercase tracking-widest text-xs font-bold px-8 py-4 transition-all duration-300",
+      "ghost": "text-white/60 hover:text-white hover:bg-white/5 rounded-none"
+    },
+    "cards": {
+      "style": "bg-[#121212] border border-white/5 hover:border-[#D4AF37]/30 transition-colors duration-300 rounded-none",
+      "padding": "p-6 or p-8"
+    },
+    "inputs": {
+      "style": "bg-[#0A0A0A] border-white/10 focus:border-[#D4AF37] rounded-none text-white placeholder:text-white/20 h-12"
+    }
+  },
+  "image_urls": {
+    "hero": [
+      {
+        "url": "https://images.unsplash.com/photo-1633174102090-ac62872538dd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwzfHxsdXh1cnklMjBkYXJrJTIwbW9kZXJuJTIwa2l0Y2hlbiUyMGNhYmluZXRzJTIwbmlnaHQlMjBsaWdodGluZ3xlbnwwfHx8fDE3NjkxNTI2NDd8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Dark luxury kitchen hero background",
+        "category": "hero"
+      }
+    ],
+    "categories": [
+      {
+        "url": "https://images.unsplash.com/photo-1760385737098-0b555a75b2ba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3b29kZW4lMjBkb29yJTIwZGFyayUyMGludGVyaW9yfGVufDB8fHx8MTc2OTE1MjY1MHww&ixlib=rb-4.1.0&q=85",
+        "description": "Golden wooden door entrance",
+        "category": "doors"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1699982759850-22dbbd9676b7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwxfHxibGFjayUyMG1hcmJsZSUyMGNvdW50ZXJ0b3AlMjB0ZXh0dXJlJTIwY2xvc2UlMjB1cHxlbnwwfHx8fDE3NjkxNTI2NTN8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Black marble texture",
+        "category": "countertops"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1759774310455-80dba1348cbd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MDV8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjB2ZWx2ZXQlMjBzb2ZhJTIwZGFyayUyMHJvb218ZW58MHx8fHwxNzY5MTUyNjU2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Luxury furniture living room",
+        "category": "furniture"
+      }
+    ],
+    "textures": [
+      {
+        "url": "https://images.unsplash.com/photo-1682643143637-e583c5fc20a9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHx3YWxudXQlMjB3b29kJTIwdGV4dHVyZSUyMHNlYW1sZXNzfGVufDB8fHx8MTc2OTE1MjY1OHww&ixlib=rb-4.1.0&q=85",
+        "description": "Walnut wood texture",
+        "category": "texture_wood"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1523251836828-b75d28b89804?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHw0fHx3aGl0ZSUyMGNhcnJhcmElMjBtYXJibGUlMjB0ZXh0dXJlJTIwc2VhbWxlc3N8ZW58MHx8fHwxNzY5MTUyNjY3fDA&ixlib=rb-4.1.0&q=85",
+        "description": "White Carrara marble texture",
+        "category": "texture_marble"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1638888077595-039e77b1dc70?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxicnVzaGVkJTIwZ29sZCUyMG1ldGFsJTIwdGV4dHVyZXxlbnwwfHx8fDE3NjkxNTI2Njl8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Brushed gold metal texture",
+        "category": "texture_metal"
+      }
+    ],
+    "trust": [
+      {
+        "url": "https://images.unsplash.com/photo-1577561776790-1a20c419b1a2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MjJ8MHwxfHNlYXJjaHw0fHxhcmNoaXRlY3QlMjBza2V0Y2hpbmclMjBvbiUyMGJsdWVwcmludCUyMGNsb3NlJTIwdXB8ZW58MHx8fHwxNzY5MTUyNjcwfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Architect sketching",
+        "category": "process_design"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1722411927625-0e478acf502b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwyfHxmdXJuaXR1cmUlMjBjcmFmdHNtYW4lMjB3b3JraW5nJTIwaW4lMjB3b3Jrc2hvcHxlbnwwfHx8fDE3NjkxNTI2NzJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Craftsman working",
+        "category": "process_build"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1762814618321-b95fd7660cd1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBzaGlwcGluZyUyMGNvbnRhaW5lciUyMHBvcnQlMjBzdW5zZXR8ZW58MHx8fHwxNzY5MTUyNjc0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Shipping container port",
+        "category": "process_shipping"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "THEME: Implement a 'Luxury Dark' theme. Use #0A0A0A as the base, not pure black.",
+    "FONTS: Use 'Playfair Display' for all Headings (H1-H3) and 'Manrope' for Body. Import them from Google Fonts.",
+    "COMPONENTS: Use Shadcn UI for the 'Product Configurator' and 'Admin Panel'. Heavily customize them to remove the 'Vercel look'.",
+    "MARKETING: Build the Landing Page using raw HTML/Tailwind with the 'Tetris Grid' layout. Do not use Cards here.",
+    "AI ASSISTANT: Design the chat interface as a 'Concierge Service'. Use the 'Architect sketching' image as the persona avatar.",
+    "CONFIGURATOR: Create a split-screen layout. Left: 3D/Image Preview (Large). Right: Controls (Dense Grid).",
+    "TRUST: Use the 'Craftsman' and 'Shipping' images in the 'How it Works' section to emphasize the 'Turkey to Europe' journey.",
+    "TESTING: Add data-testid to all interactive elements (buttons, inputs, product cards)."
+  ],
+  "universal_guidelines": [
+    "Avoid generic centered layouts.",
+    "Use 2-3x more spacing than typical designs.",
+    "Every interaction needs micro-animations.",
+    "Use glassmorphism with caution - only for sticky headers or overlays.",
+    "Never use default Shadcn colors. Override with the 'Jewel & Luxury' palette."
+  ]
+}
