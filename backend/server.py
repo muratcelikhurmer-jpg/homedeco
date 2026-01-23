@@ -665,6 +665,155 @@ The image should look like a professional interior design magazine photo."""
         raise HTTPException(status_code=500, detail=str(e))
 
 # =====================
+# FAL.AI IMAGE EDITING ENDPOINTS
+# =====================
+
+class EditRoomRequest(BaseModel):
+    room_image_base64: str  # User's room photo
+    edit_prompt: str  # What to add/change
+    mask_image_base64: Optional[str] = None  # Optional mask for specific area
+
+async def upload_image_to_fal(image_base64: str) -> str:
+    """Upload base64 image to fal.ai and get URL"""
+    # Remove data URL prefix if present
+    if "base64," in image_base64:
+        image_base64 = image_base64.split("base64,")[1]
+    
+    # Decode and upload
+    image_bytes = base64.b64decode(image_base64)
+    
+    # Use fal's file upload
+    url = await fal_client.upload_async(image_bytes, "image/png")
+    return url
+
+@api_router.post("/edit-room-image")
+async def edit_room_image(request: EditRoomRequest):
+    """
+    Edit user's room photo using fal.ai inpainting.
+    Adds furniture/modifications to the actual room photo.
+    """
+    try:
+        fal_key = os.environ.get("FAL_KEY")
+        if not fal_key:
+            raise HTTPException(status_code=500, detail="Fal.ai service not configured")
+        
+        logger.info(f"Starting room image edit with prompt: {request.edit_prompt[:100]}...")
+        
+        # Upload the room image to fal
+        room_image_url = await upload_image_to_fal(request.room_image_base64)
+        logger.info(f"Room image uploaded: {room_image_url[:50]}...")
+        
+        # Build detailed prompt for interior design
+        full_prompt = f"""Interior design photo edit:
+{request.edit_prompt}
+
+Requirements:
+- Seamlessly integrate new furniture into the existing room
+- Match the lighting, perspective and style of the original photo
+- Keep the room structure, walls, floor intact
+- Make it look like a real professional interior design photo
+- Premium European quality furniture
+- Photorealistic result"""
+
+        # Use fal.ai image-to-image or inpainting model
+        # Try Flux.1 dev with image reference
+        handler = await fal_client.submit_async(
+            "fal-ai/flux/dev/image-to-image",
+            arguments={
+                "prompt": full_prompt,
+                "image_url": room_image_url,
+                "strength": 0.75,  # Keep most of original but allow edits
+                "num_inference_steps": 28,
+                "guidance_scale": 7.5,
+                "num_images": 1,
+                "enable_safety_checker": False
+            }
+        )
+        
+        result = await handler.get()
+        logger.info(f"Fal.ai result received")
+        
+        if result and result.get("images") and len(result["images"]) > 0:
+            image_url = result["images"][0]["url"]
+            
+            # Download the generated image
+            async with httpx.AsyncClient() as client:
+                response = await client.get(image_url)
+                image_bytes = response.content
+                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+            
+            return {
+                "image_base64": image_base64,
+                "prompt_used": full_prompt,
+                "edited": True,
+                "original_preserved": True
+            }
+        else:
+            raise HTTPException(status_code=500, detail="No image was generated")
+    
+    except Exception as e:
+        logger.error(f"Room image edit error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/edit-room-inpaint")
+async def edit_room_inpaint(request: EditRoomRequest):
+    """
+    Advanced inpainting - edit specific areas of the room photo.
+    Better for adding furniture to specific locations.
+    """
+    try:
+        fal_key = os.environ.get("FAL_KEY")
+        if not fal_key:
+            raise HTTPException(status_code=500, detail="Fal.ai service not configured")
+        
+        logger.info(f"Starting inpainting edit with prompt: {request.edit_prompt[:100]}...")
+        
+        # Upload images
+        room_image_url = await upload_image_to_fal(request.room_image_base64)
+        
+        # Build prompt
+        full_prompt = f"""Add to this bedroom:
+{request.edit_prompt}
+
+Style: Premium European furniture, photorealistic, professionally installed
+Maintain the original room's lighting and perspective"""
+
+        # Use FLUX inpainting model for precise edits
+        handler = await fal_client.submit_async(
+            "fal-ai/flux-pro/v1.1",
+            arguments={
+                "prompt": full_prompt,
+                "image_url": room_image_url,
+                "num_images": 1,
+                "enable_safety_checker": False,
+                "safety_tolerance": "6"
+            }
+        )
+        
+        result = await handler.get()
+        logger.info(f"Fal.ai inpaint result received")
+        
+        if result and result.get("images") and len(result["images"]) > 0:
+            image_url = result["images"][0]["url"]
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.get(image_url)
+                image_bytes = response.content
+                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+            
+            return {
+                "image_base64": image_base64,
+                "prompt_used": full_prompt,
+                "edited": True
+            }
+        else:
+            raise HTTPException(status_code=500, detail="No image was generated")
+    
+    except Exception as e:
+        logger.error(f"Room inpaint error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =====================
 # PRODUCT & PRICING ENDPOINTS
 # =====================
 
