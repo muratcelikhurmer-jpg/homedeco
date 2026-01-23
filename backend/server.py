@@ -408,6 +408,128 @@ async def get_chat_history(session_id: str):
     return session
 
 # =====================
+# AI IMAGE GENERATION ENDPOINTS
+# =====================
+
+class GenerateDesignRequest(BaseModel):
+    room_image_base64: str  # Customer's room photo
+    inspiration_description: str  # Description of what to add (from AI analysis)
+    product_type: str  # cabinet, door, countertop, etc.
+    style: Optional[str] = "modern"  # modern, classic, minimalist
+    material: Optional[str] = None  # oak, walnut, marble, etc.
+    color: Optional[str] = None
+    language: str = "en"
+
+class GenerateDesignResponse(BaseModel):
+    image_base64: str
+    prompt_used: str
+
+@api_router.post("/generate-design", response_model=GenerateDesignResponse)
+async def generate_design_visualization(request: GenerateDesignRequest):
+    """
+    Generate a visualization of furniture/cabinet design in customer's room.
+    Takes the room photo and creates a new image with the furniture added.
+    """
+    try:
+        llm_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not llm_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        # Build prompt based on request
+        material_desc = f", made of {request.material}" if request.material else ""
+        color_desc = f", in {request.color} color" if request.color else ""
+        
+        prompt = f"""Create a photorealistic interior design visualization showing:
+A {request.style} style {request.product_type}{material_desc}{color_desc} installed in a bedroom.
+
+Design requirements:
+- {request.inspiration_description}
+- The furniture should look professionally installed and integrated with the room
+- Maintain realistic lighting and shadows
+- High-end, European quality appearance
+- The design should be practical and functional
+
+Style: Premium, sophisticated, {request.style}
+Product: Custom {request.product_type}
+Quality: Photorealistic interior design render"""
+
+        # Initialize image generator
+        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        
+        # Generate image
+        images = await image_gen.generate_images(
+            prompt=prompt,
+            model="gpt-image-1",
+            number_of_images=1
+        )
+        
+        if images and len(images) > 0:
+            image_base64 = base64.b64encode(images[0]).decode('utf-8')
+            return GenerateDesignResponse(
+                image_base64=image_base64,
+                prompt_used=prompt
+            )
+        else:
+            raise HTTPException(status_code=500, detail="No image was generated")
+    
+    except Exception as e:
+        logger.error(f"Image generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class QuickDesignRequest(BaseModel):
+    description: str  # User's description in any language
+    product_type: str = "cabinet"  # cabinet, door, countertop, furniture
+    style: str = "modern"
+    room_type: str = "bedroom"
+
+@api_router.post("/generate-quick-design")
+async def generate_quick_design(request: QuickDesignRequest):
+    """
+    Quick design generation based on text description only.
+    For users who want to see design concepts before sharing their room photos.
+    """
+    try:
+        llm_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not llm_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        prompt = f"""Create a photorealistic interior design visualization:
+
+A {request.style} {request.room_type} featuring custom {request.product_type}.
+Description: {request.description}
+
+Requirements:
+- Photorealistic render quality
+- Premium, European luxury aesthetic
+- Professional interior photography style
+- Soft natural lighting
+- High-end materials visible (wood grain, marble veins if applicable)
+- Clean, sophisticated design
+
+The image should look like a professional interior design magazine photo."""
+
+        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        
+        images = await image_gen.generate_images(
+            prompt=prompt,
+            model="gpt-image-1",
+            number_of_images=1
+        )
+        
+        if images and len(images) > 0:
+            image_base64 = base64.b64encode(images[0]).decode('utf-8')
+            return {
+                "image_base64": image_base64,
+                "prompt_used": prompt
+            }
+        else:
+            raise HTTPException(status_code=500, detail="No image was generated")
+    
+    except Exception as e:
+        logger.error(f"Quick design generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =====================
 # PRODUCT & PRICING ENDPOINTS
 # =====================
 
