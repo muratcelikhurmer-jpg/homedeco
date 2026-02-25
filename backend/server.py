@@ -671,53 +671,99 @@ The image should look like a professional interior design magazine photo."""
 class EditRoomRequest(BaseModel):
     room_image_base64: str  # User's room photo
     edit_prompt: str  # What to add/change
-    mask_image_base64: Optional[str] = None  # Optional mask for specific area
-
-async def upload_image_to_fal(image_base64: str) -> str:
-    """Upload base64 image to fal.ai and get URL"""
-    # Remove data URL prefix if present
-    if "base64," in image_base64:
-        image_base64 = image_base64.split("base64,")[1]
-    
-    # Decode and upload
-    image_bytes = base64.b64decode(image_base64)
-    
-    # Use fal's file upload
-    url = await fal_client.upload_async(image_bytes, "image/png")
-    return url
+    style: str = "modern"
+    color: str = "cream"
 
 @api_router.post("/edit-room-image")
 async def edit_room_image(request: EditRoomRequest):
     """
-    Edit user's room photo using fal.ai inpainting.
-    Adds furniture/modifications to the actual room photo.
+    Analyze room photo and generate matching design visualization.
+    Uses OpenAI (Emergent LLM Key) - no fal.ai needed.
     """
     try:
-        fal_key = os.environ.get("FAL_KEY")
-        if not fal_key:
-            raise HTTPException(status_code=500, detail="Fal.ai service not configured")
+        llm_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not llm_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
         
-        logger.info(f"Starting room image edit with prompt: {request.edit_prompt[:100]}...")
+        logger.info(f"Starting room design with prompt: {request.edit_prompt[:100]}...")
         
-        # Upload the room image to fal
-        room_image_url = await upload_image_to_fal(request.room_image_base64)
-        logger.info(f"Room image uploaded: {room_image_url[:50]}...")
+        # Step 1: Analyze the room photo with GPT-4o Vision
+        img_base64 = request.room_image_base64
+        if "base64," in img_base64:
+            img_base64 = img_base64.split("base64,")[1]
         
-        # Build detailed prompt for interior design
-        full_prompt = f"""Interior design photo edit:
+        analysis_chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"room_{uuid.uuid4()}",
+            system_message="Sen uzman bir iç mimar ve tasarımcısın. Odaları analiz edip detaylı ölçü ve tasarım önerileri verirsin."
+        ).with_model("openai", "gpt-4o")
+        
+        analysis_prompt = f"""Bu yatak odası fotoğrafını analiz et:
+
+1. Tahmini duvar genişliği (cm)
+2. Tahmini tavan yüksekliği (cm)  
+3. Duvar rengi
+4. Zemin tipi
+5. Mevcut mobilyalar
+6. Işık durumu
+
+Kullanıcının isteği: {request.edit_prompt}
+
+Kısa ve öz analiz yap."""
+
+        analysis_message = UserMessage(
+            text=analysis_prompt,
+            file_contents=[ImageContent(image_base64=img_base64)]
+        )
+        
+        room_analysis = await analysis_chat.send_message(analysis_message)
+        logger.info(f"Room analysis done: {room_analysis[:200]}...")
+        
+        # Step 2: Generate design visualization with GPT Image
+        design_prompt = f"""Photorealistic bedroom interior design visualization:
+
+ROOM ANALYSIS:
+{room_analysis[:500]}
+
+USER REQUEST:
 {request.edit_prompt}
 
-Requirements:
-- Seamlessly integrate new furniture into the existing room
-- Match the lighting, perspective and style of the original photo
-- Keep the room structure, walls, floor intact
-- Make it look like a real professional interior design photo
-- Premium European quality furniture
-- Photorealistic result"""
+DESIGN REQUIREMENTS:
+- {request.style} style, {request.color} colored furniture
+- Built-in wardrobes on both sides of the bed with drawers
+- Upper cabinets from 170cm height to ceiling
+- Bookshelf at 140cm height above headboard
+- Premium European quality, DIN standards
+- Professional interior photography, magazine quality
+- Realistic lighting and shadows
+- Complete wall view with bed and all furniture
 
-        # Use fal.ai image-to-image or inpainting model
-        # Try Flux.1 dev with image reference
-        handler = await fal_client.submit_async(
+Create a photorealistic render of this bedroom design."""
+
+        image_gen = OpenAIImageGeneration(api_key=llm_key)
+        
+        images = await image_gen.generate_images(
+            prompt=design_prompt,
+            model="gpt-image-1",
+            number_of_images=1
+        )
+        
+        if images and len(images) > 0:
+            result_image = base64.b64encode(images[0]).decode('utf-8')
+            logger.info("Design image generated successfully")
+            
+            return {
+                "image_base64": result_image,
+                "room_analysis": room_analysis,
+                "prompt_used": design_prompt[:500],
+                "edited": True
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Image generation failed")
+    
+    except Exception as e:
+        logger.error(f"Room design error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
             "fal-ai/flux/dev/image-to-image",
             arguments={
                 "prompt": full_prompt,
